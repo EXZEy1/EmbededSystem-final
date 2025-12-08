@@ -1,50 +1,51 @@
-// =========================
-// 1) CONFIG
-// =========================
-const CHANNEL_ID = "3196507"; // ใส่ Channel ID ของคุณ
 
-// Thresholds
-const SOIL_DRY_THRESHOLD = 2500;
-const LIGHT_OK_THRESHOLD = 1500;
+const PROJECT_ID = "smart-plant-care-system-179aa"; 
 
-const REFRESH_MS = 20000;
-const API_URL = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?results=1`;
+// URL สำหรับดึงข้อมูล (REST API)
+const API_URL = `https://smart-plant-care-system-179aa-default-rtdb.asia-southeast1.firebasedatabase.app/Sensor.json`;
 
-// =========================
-// 2) ELEMENTS
-// =========================
+// ตั้งค่าเกณฑ์แจ้งเตือน (Thresholds)
+const SOIL_DRY_THRESHOLD = 2500; 
+const LIGHT_OK_THRESHOLD = 1000; 
+
+const REFRESH_MS = 5000; // อัปเดตทุก 5 วินาที 
+
+
 const refreshBtn = document.getElementById("refreshBtn");
 const connDot = document.getElementById("connDot");
-const connText = document.getElementById("connText"); // เพิ่ม Text element
+const connText = document.getElementById("connText");
 const updatedEl = document.getElementById("updated");
 
-// -------------------------
-// ฟังก์ชันจัดการสถานะการเชื่อมต่อ (ปรับให้เข้ากับ UI ใหม่)
+// ฟังก์ชันเปลี่ยนสีสถานะ
 function setBadge(state){
   if(state === "ok"){
-    connDot.style.backgroundColor = "#22c55e"; // สีเขียว
+    connDot.style.backgroundColor = "#22c55e"; 
     connText.textContent = "Online";
     connText.style.color = "#15803d";
   } else if(state === "err"){
-    connDot.style.backgroundColor = "#ef4444"; // สีแดง
+    connDot.style.backgroundColor = "#ef4444"; 
     connText.textContent = "Error";
     connText.style.color = "#b91c1c";
   } else {
-    connDot.style.backgroundColor = "#fbbf24"; // สีเหลือง
+    connDot.style.backgroundColor = "#fbbf24"; 
     connText.textContent = "Loading...";
     connText.style.color = "#b45309";
   }
 }
 
+// ฟังก์ชันอัปเดตการ์ด
 function updateCard(id, valueText, statusText) {
   const card = document.getElementById(id);
   if(card) {
-    card.querySelector(".value").innerText = valueText;
-    card.querySelector(".status").innerText = statusText;
+    const valEl = card.querySelector(".value");
+    const statEl = card.querySelector(".status");
+    valEl.innerText = valueText;
+    statEl.innerText = statusText;
   }
 }
 
-function showNoData(message = "ไม่มีข้อมูล"){
+// ฟังก์ชันแสดงตอนไม่มีข้อมูล
+function showNoData(message = "Offline"){
   updateCard("soil", "--", message);
   updateCard("light", "--", message);
   updateCard("temp", "--", message);
@@ -52,13 +53,12 @@ function showNoData(message = "ไม่มีข้อมูล"){
   updatedEl.innerText = "อัปเดตล่าสุด: --";
 }
 
-// =========================
-// 3) MAIN FETCH (Logic เดิม)
-// =========================
+
 async function fetchData() {
-  if(!CHANNEL_ID || CHANNEL_ID === "YOUR_CHANNEL_ID"){
+  
+  if(!PROJECT_ID || PROJECT_ID === "ใส่ชื่อโปรเจคของคุณตรงนี้"){
     setBadge("err");
-    showNoData("No Channel ID");
+    alert("อย่าลืมแก้ชื่อ PROJECT_ID ในไฟล์ app.js นะครับ!");
     return;
   }
 
@@ -67,80 +67,78 @@ async function fetchData() {
   refreshBtn.innerText = "⏳...";
 
   try {
-    const res = await fetch(API_URL, { cache: "no-store" });
-    const json = await res.json();
-
-    const feed = json?.feeds?.[0];
-    if(!feed){
+    
+    const res = await fetch(API_URL);
+    
+    if (!res.ok) throw new Error("Network response was not ok");
+    
+    const data = await res.json(); 
+    if(!data){
       setBadge("err");
-      showNoData();
+      showNoData("No Data");
       return;
     }
 
-    // Mapping Data
-    const soilRaw = feed.field1;
-    const lightRaw = feed.field2;
-    const tempRaw = feed.field3;
-    const humiRaw = feed.field4;
+    // --- ดึงค่าจาก JSON (ตามชื่อที่ตั้งใน ESP32) ---
+    
+    const soil = data.Soil;
+    const light = data.Light;
+    const temp = data.Temp;
+    const humi = data.Humid;
 
-    const soil = soilRaw != null ? parseInt(soilRaw) : null;
-    const light = lightRaw != null ? parseInt(lightRaw) : null;
-    const temp = tempRaw != null ? parseFloat(tempRaw) : null;
-    const humi = humiRaw != null ? parseFloat(humiRaw) : null;
+    // --- วิเคราะห์สถานะ (Logic) ---
+    
+    // 1. ดิน (Soil)
+    let soilStatus = "รอข้อมูล";
+    if (soil !== undefined) {
+      
+      soilStatus = soil > SOIL_DRY_THRESHOLD ? "💧 ดินแห้ง (ปั๊มทำงาน)" : "🌱 ดินชุ่มชื้น";
+    }
 
-    // Logic ตรวจสอบค่า
-    const soilStatus = soil == null
-      ? "รอข้อมูล"
-      : soil > SOIL_DRY_THRESHOLD
-        ? "💧 ดินแห้ง"
-        : "🌱 ดินชื้นดี";
+    // 2. แสง (Light - LDR)
+    let lightStatus = "รอข้อมูล";
+    if (light !== undefined) {
+       lightStatus = light > LIGHT_OK_THRESHOLD ? "🌤 แสงพอ" : "🌑 แสงน้อย";
+    }
 
-    const lightStatus = light == null
-      ? "รอข้อมูล"
-      : light > LIGHT_OK_THRESHOLD
-        ? "🌤 แสงพอ"
-        : "🌑 แสงน้อย";
+    // 3. อุณหภูมิ (Temp)
+    let tempStatus = "รอข้อมูล";
+    if (temp !== undefined) {
+      tempStatus = temp > 32 ? "🥵 ร้อน" : (temp < 20 ? "🥶 เย็น" : "🌡 ปกติ");
+    }
 
-    const tempStatus = temp == null
-      ? "รอข้อมูล"
-      : temp > 35
-        ? "🥵 ร้อน"
-        : temp < 20
-          ? "🥶 เย็น"
-          : "🌡 ปกติ";
+    // 4. ความชื้นอากาศ (Humid)
+    let humiStatus = "รอข้อมูล";
+    if (humi !== undefined) {
+      humiStatus = humi < 40 ? "💨 แห้งไป" : (humi > 80 ? "💦 ชื้นไป" : "👌 ปกติ");
+    }
 
-    const humiStatus = humi == null
-      ? "รอข้อมูล"
-      : humi < 40
-        ? "💨 แห้งไป"
-        : humi > 80
-          ? "💦 ชื้นไป"
-          : "👌 ปกติ";
-
-    // Update UI
+    // --- อัปเดตหน้าจอ ---
     updateCard("soil", soil ?? "--", soilStatus);
     updateCard("light", light ?? "--", lightStatus);
     updateCard("temp", (temp ?? "--") + " °C", tempStatus);
     updateCard("humi", (humi ?? "--") + " %", humiStatus);
 
-    const t = feed.created_at ? new Date(feed.created_at) : null;
-    updatedEl.innerText = "อัปเดตล่าสุด: " + (t ? t.toLocaleTimeString("th-TH") : "--");
+    // เวลาปัจจุบัน
+    const now = new Date();
+    updatedEl.innerText = "อัปเดตล่าสุด: " + now.toLocaleTimeString("th-TH");
 
     setBadge("ok");
+
   } catch (err) {
     console.error("Error fetching data:", err);
     setBadge("err");
-    showNoData("Connect Fail");
+    
   } finally {
     refreshBtn.disabled = false;
     refreshBtn.innerText = "🔄 Refresh";
   }
 }
 
-// =========================
-// 4) EVENTS
-// =========================
+
 refreshBtn.addEventListener("click", fetchData);
 
+
 fetchData();
+
 setInterval(fetchData, REFRESH_MS);
