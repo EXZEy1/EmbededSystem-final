@@ -1,11 +1,9 @@
 :root {
   --primary: #1f7a37;
   --bg-gradient: linear-gradient(135deg, #e0f7fa 0%, #e8f5e9 100%);
-  --card-bg: #ffffff;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   --text-main: #2d3748;
   --text-sub: #718096;
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  --radius: 20px;
 }
 
 body {
@@ -21,166 +19,98 @@ body {
 }
 
 .main-container {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 24px;
   padding: 30px;
   width: 100%;
   max-width: 500px;
   box-shadow: 0 10px 40px rgba(31, 122, 55, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-/* Header */
-header {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-h1 {
-  color: var(--primary);
-  margin: 0;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-.subtitle {
-  color: var(--text-sub);
-  font-size: 14px;
-  margin-top: 5px;
-}
+header { text-align: center; margin-bottom: 20px; }
+h1 { color: var(--primary); margin: 0; font-size: 28px; font-weight: 600; }
+.subtitle { color: var(--text-sub); font-size: 14px; margin-top: 5px; }
 
 /* Status Bar */
 .status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #f8fafc;
-  padding: 10px 15px;
-  border-radius: 12px;
-  margin-bottom: 25px;
-  border: 1px solid #e2e8f0;
+  display: flex; justify-content: space-between; align-items: center;
+  background: #f8fafc; padding: 10px 15px; border-radius: 12px;
+  margin-bottom: 25px; border: 1px solid #e2e8f0;
 }
-
-.connection-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-sub);
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: #cbd5e0;
-  transition: background-color 0.3s;
-}
-
+.connection-status { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-sub); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background-color: #cbd5e0; transition: background-color 0.3s; }
 .refresh-btn {
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 5px rgba(31, 122, 55, 0.2);
+  background: var(--primary); color: white; border: none; padding: 8px 16px;
+  border-radius: 8px; font-family: inherit; font-size: 12px; cursor: pointer;
+  transition: all 0.2s; box-shadow: 0 2px 5px rgba(31, 122, 55, 0.2);
 }
+.refresh-btn:hover { background: #166534; transform: translateY(-1px); }
+.refresh-btn:disabled { background: #9ca3af; cursor: not-allowed; }
 
-.refresh-btn:hover {
-  background: #166534;
-  transform: translateY(-1px);
-}
-
-.refresh-btn:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Grid Layout for Sensors */
+/* Sensor Grid */
 .sensor-grid {
   display: grid;
-  grid-template-columns: 1fr; /* Mobile: 1 col */
+  grid-template-columns: 1fr 1fr; /* บังคับ 2 คอลัมน์เลยเพราะเหลือแค่ 2 อัน */
   gap: 15px;
-}
-
-@media (min-width: 400px) {
-  .sensor-grid {
-    grid-template-columns: 1fr 1fr; /* Tablet/Desktop: 2 cols */
-  }
+  margin-bottom: 25px;
 }
 
 .sensor-card {
+  background: white; border-radius: 16px; padding: 20px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  border: 1px solid #f0fdf4; box-shadow: var(--shadow); transition: transform 0.2s;
+}
+.sensor-card:hover { transform: translateY(-3px); border-color: #bbf7d0; }
+
+.icon {
+  font-size: 32px; margin-bottom: 10px; background: #f0fdf4; width: 50px; height: 50px;
+  display: flex; align-items: center; justify-content: center; border-radius: 50%;
+}
+.label { font-size: 13px; color: var(--text-sub); margin-bottom: 4px; }
+.value { font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+.status { font-size: 11px; padding: 4px 8px; background: #f1f5f9; border-radius: 6px; color: var(--text-sub); }
+
+/* --- Control Panel (ส่วนใหม่) --- */
+.control-panel {
   background: white;
   border-radius: 16px;
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  border: 1px solid #e2e8f0;
   text-align: center;
-  border: 1px solid #f0fdf4;
   box-shadow: var(--shadow);
-  transition: transform 0.2s;
 }
+.control-panel h3 { margin: 0 0 15px 0; font-size: 16px; color: var(--text-main); }
 
-.sensor-card:hover {
-  transform: translateY(-3px);
-  border-color: #bbf7d0;
-}
-
-.icon {
-  font-size: 32px;
-  margin-bottom: 10px;
-  background: #f0fdf4;
-  width: 60px;
-  height: 60px;
+.button-group {
   display: flex;
-  align-items: center;
+  gap: 10px;
   justify-content: center;
-  border-radius: 50%;
+  margin-bottom: 10px;
 }
 
-.label {
-  font-size: 13px;
-  color: var(--text-sub);
-  font-weight: 500;
-  margin-bottom: 4px;
+.ctrl-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+  color: white;
 }
+.ctrl-btn:active { transform: scale(0.95); }
 
-.value {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-main);
-  margin-bottom: 4px;
-}
+/* สีปุ่มต่างๆ */
+.btn-on { background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); }
+.btn-off { background: linear-gradient(135deg, #f87171 0%, #ef4444 100%); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+.btn-auto { background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); }
 
-.status {
-  font-size: 11px;
-  padding: 4px 8px;
-  background: #f1f5f9;
-  border-radius: 6px;
-  color: var(--text-sub);
-  display: inline-block;
-}
+.control-status { font-size: 13px; color: var(--text-sub); margin: 0; }
 
 /* Footer */
-footer {
-  margin-top: 30px;
-  text-align: center;
-  color: #94a3b8;
-  font-size: 12px;
-  border-top: 1px solid #e2e8f0;
-  padding-top: 15px;
-}
-
-#updated {
-  font-weight: 500;
-  color: var(--primary);
-  margin-bottom: 5px;
-}
+footer { margin-top: 30px; text-align: center; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+#updated { font-weight: 500; color: var(--primary); margin-bottom: 5px; }

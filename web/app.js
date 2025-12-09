@@ -1,20 +1,41 @@
-
 const PROJECT_ID = "smart-plant-care-system-179aa"; 
-
-// URL สำหรับดึงข้อมูล (REST API)
 const API_URL = `https://smart-plant-care-system-179aa-default-rtdb.asia-southeast1.firebasedatabase.app/Sensor.json`;
 
-// ตั้งค่าเกณฑ์แจ้งเตือน (Thresholds)
+// เกณฑ์แจ้งเตือน
 const SOIL_DRY_THRESHOLD = 2500; 
 const LIGHT_OK_THRESHOLD = 1000; 
+const REFRESH_MS = 5000;
 
-const REFRESH_MS = 5000; // อัปเดตทุก 5 วินาที 
-
-
+// Elements
 const refreshBtn = document.getElementById("refreshBtn");
 const connDot = document.getElementById("connDot");
 const connText = document.getElementById("connText");
 const updatedEl = document.getElementById("updated");
+
+// ปุ่มควบคุมใหม่
+const btnOn = document.getElementById("btnOn");
+const btnOff = document.getElementById("btnOff");
+const btnAuto = document.getElementById("btnAuto");
+const controlStatus = document.getElementById("controlStatus");
+
+// --- จัดการปุ่มกด (ตัวอย่าง: แค่แสดงสถานะหน้าเว็บ) ---
+// *ถ้าต้องการให้ส่งค่ากลับไป Firebase ต้องเขียน PUT method เพิ่มตรงนี้*
+btnOn.addEventListener("click", () => {
+    console.log("Command: ON");
+    controlStatus.innerText = "สถานะปัจจุบัน: 🟢 เปิดทำงาน";
+    // ใส่โค้ดส่งค่าไป Firebase ตรงนี้ได้
+});
+
+btnOff.addEventListener("click", () => {
+    console.log("Command: OFF");
+    controlStatus.innerText = "สถานะปัจจุบัน: 🔴 ปิดการทำงาน";
+});
+
+btnAuto.addEventListener("click", () => {
+    console.log("Command: AUTO");
+    controlStatus.innerText = "สถานะปัจจุบัน: 🔵 โหมด Auto";
+});
+
 
 // ฟังก์ชันเปลี่ยนสีสถานะ
 function setBadge(state){
@@ -33,7 +54,6 @@ function setBadge(state){
   }
 }
 
-// ฟังก์ชันอัปเดตการ์ด
 function updateCard(id, valueText, statusText) {
   const card = document.getElementById(id);
   if(card) {
@@ -44,18 +64,13 @@ function updateCard(id, valueText, statusText) {
   }
 }
 
-// ฟังก์ชันแสดงตอนไม่มีข้อมูล
 function showNoData(message = "Offline"){
   updateCard("soil", "--", message);
   updateCard("light", "--", message);
-  updateCard("temp", "--", message);
-  updateCard("humi", "--", message);
   updatedEl.innerText = "อัปเดตล่าสุด: --";
 }
 
-
 async function fetchData() {
-  
   if(!PROJECT_ID || PROJECT_ID === "ใส่ชื่อโปรเจคของคุณตรงนี้"){
     setBadge("err");
     alert("อย่าลืมแก้ชื่อ PROJECT_ID ในไฟล์ app.js นะครับ!");
@@ -67,9 +82,7 @@ async function fetchData() {
   refreshBtn.innerText = "⏳...";
 
   try {
-    
     const res = await fetch(API_URL);
-    
     if (!res.ok) throw new Error("Network response was not ok");
     
     const data = await res.json(); 
@@ -79,45 +92,25 @@ async function fetchData() {
       return;
     }
 
-    // --- ดึงค่าจาก JSON (ตามชื่อที่ตั้งใน ESP32) ---
-    
+    // --- ดึงค่า (เหลือแค่ Soil กับ Light) ---
     const soil = data.Soil;
     const light = data.Light;
-    const temp = data.Temp;
-    const humi = data.Humid;
 
-    // --- วิเคราะห์สถานะ (Logic) ---
-    
     // 1. ดิน (Soil)
     let soilStatus = "รอข้อมูล";
     if (soil !== undefined) {
-      
       soilStatus = soil > SOIL_DRY_THRESHOLD ? "💧 ดินแห้ง (ปั๊มทำงาน)" : "🌱 ดินชุ่มชื้น";
     }
 
-    // 2. แสง (Light - LDR)
+    // 2. แสง (Light)
     let lightStatus = "รอข้อมูล";
     if (light !== undefined) {
        lightStatus = light > LIGHT_OK_THRESHOLD ? "🌤 แสงพอ" : "🌑 แสงน้อย";
     }
 
-    // 3. อุณหภูมิ (Temp)
-    let tempStatus = "รอข้อมูล";
-    if (temp !== undefined) {
-      tempStatus = temp > 32 ? "🥵 ร้อน" : (temp < 20 ? "🥶 เย็น" : "🌡 ปกติ");
-    }
-
-    // 4. ความชื้นอากาศ (Humid)
-    let humiStatus = "รอข้อมูล";
-    if (humi !== undefined) {
-      humiStatus = humi < 40 ? "💨 แห้งไป" : (humi > 80 ? "💦 ชื้นไป" : "👌 ปกติ");
-    }
-
     // --- อัปเดตหน้าจอ ---
     updateCard("soil", soil ?? "--", soilStatus);
     updateCard("light", light ?? "--", lightStatus);
-    updateCard("temp", (temp ?? "--") + " °C", tempStatus);
-    updateCard("humi", (humi ?? "--") + " %", humiStatus);
 
     // เวลาปัจจุบัน
     const now = new Date();
@@ -128,17 +121,13 @@ async function fetchData() {
   } catch (err) {
     console.error("Error fetching data:", err);
     setBadge("err");
-    
   } finally {
     refreshBtn.disabled = false;
     refreshBtn.innerText = "🔄 Refresh";
   }
 }
 
-
 refreshBtn.addEventListener("click", fetchData);
 
-
 fetchData();
-
 setInterval(fetchData, REFRESH_MS);
